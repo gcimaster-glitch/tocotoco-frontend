@@ -146,8 +146,9 @@ export const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
               </label>
               <input
                 id="email"
-                type="email"
+                type="text"
                 name="email"
+                inputMode="email"
                 placeholder="example@tocotoco.jp"
                 className={`w-full px-4 py-3 rounded-xl border text-stone-800 text-sm transition-all outline-none ${
                   errors.email

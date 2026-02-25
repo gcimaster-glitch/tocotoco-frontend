@@ -365,7 +365,7 @@ export const Register: React.FC<RegisterProps> = ({ setView, onRegister }) => {
             <div className="space-y-1">
               <label className="text-sm font-semibold text-stone-700">メールアドレス<span className="text-red-500 ml-1 text-xs">必須</span></label>
               <input
-                type="email" name="email" placeholder="example@tocotoco.jp"
+                type="text" inputMode="email" name="email" placeholder="example@tocotoco.jp"
                 className={inputClass('email')}
                 value={formData.email} onChange={handleChange} onBlur={handleBlur} disabled={isLoading}
               />
