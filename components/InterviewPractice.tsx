@@ -3,6 +3,7 @@ import { GoogleGenAI, LiveServerMessage, Modality, Blob } from '@google/genai';
 import { Mic, StopCircle, Loader2, FileCheck, Settings, Volume2, RefreshCw, Send, HelpCircle, Globe, CheckCircle2, ArrowRight, Headphones, MessageSquare } from 'lucide-react';
 import { Job, ViewState } from '../types';
 import { PageHeader } from './PageHeader';
+import { generateInterviewReport as generateInterviewReportApi } from '../services/geminiService';
 
 interface InterviewPracticeProps {
   job: Job | null;
@@ -173,40 +174,8 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({ job, onCom
   };
 
   const generateInterviewReport = async (job: Job | null, transcript: any[]) => {
-    try {
-      const apiKey = process.env.API_KEY;
-      if (!apiKey) return "API Key missing.";
-
-      const ai = new GoogleGenAI({ apiKey });
-      const transcriptText = transcript.map(t => `${t.speaker === 'ai' ? '面接官' : '候補者'}: ${t.text}`).join('\n');
-      
-      const prompt = `
-        あなたは障がい者雇用の専門採用コンサルタントです。
-        以下の面接記録を分析し、候補者へのフィードバックレポートを作成してください。
-        
-        応募職種: "${job?.title || '一般事務・軽作業（障がい者枠）'}"
-        
-        会話記録:
-        ${transcriptText}
-
-        レポート作成要件 (日本語Markdown):
-        1. **総合評価**: 200文字程度のサマリー。障がいの特性を理解しつつ、業務遂行能力をどうアピールできたかを評価してください。
-        2. **評価スコア**: "**評価スコア**: X/100" (コミュニケーション能力、配慮事項の説明力などを総合的に判断)
-        3. **詳細フィードバック**:
-           - **良かった点**: 具体的に。
-           - **改善点**: 特に「配慮事項の伝え方」や「業務への意欲」についてアドバイスしてください。
-      `;
-
-      const response = await ai.models.generateContent({
-        model: 'gemini-3-flash-preview',
-        contents: prompt,
-      });
-
-      return response.text || "Report generation failed.";
-    } catch (error) {
-      console.error(error);
-      return `# エラー\n\nレポートの生成に失敗しました。\n\n**評価スコア**: 0/100`;
-    }
+    const jobTitle = job?.title || '一般事務・軽作業（障がい者枠）';
+    return await generateInterviewReportApi(jobTitle, transcript);
   };
 
   const handleStartClick = () => {

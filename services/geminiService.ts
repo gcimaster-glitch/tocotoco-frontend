@@ -81,3 +81,47 @@ export const generateScoutMessage = async (
     return "エラーが発生しました。";
   }
 };
+
+// --- AI面接レポート生成 ---
+export const generateInterviewReport = async (
+  jobTitle: string,
+  transcripts: { speaker: string; text: string }[]
+): Promise<string> => {
+  try {
+    const result = await callBackendApi('interview-report', { jobTitle, transcripts });
+    return result.report || '# レポート生成失敗\n\nもう一度お試しください。';
+  } catch (error) {
+    console.error('Interview Report Error:', error);
+    return `# エラー\n\nレポートの生成に失敗しました。\n\n**評価スコア**: 0/100`;
+  }
+};
+
+// --- AIコンシェルジュ（テキストチャット）---
+export const sendConciergeMessage = async (
+  userMessage: string,
+  history: { sender: string; text: string }[],
+  userProfile?: object
+): Promise<string> => {
+  try {
+    const result = await callBackendApi('concierge', { userMessage, history, userProfile });
+    return result.message || 'メッセージの生成に失敗しました。';
+  } catch (error) {
+    console.error('Concierge Error:', error);
+    return 'エラーが発生しました。しばらくしてからもう一度お試しください。';
+  }
+};
+
+// --- AI配慮事項アシスト ---
+export const generateAccommodationText = async (
+  disabilityType: string,
+  symptoms: string[],
+  desiredAccommodations: string[]
+): Promise<string> => {
+  try {
+    const result = await callBackendApi('accommodation', { disabilityType, symptoms, desiredAccommodations });
+    return result.text || '生成に失敗しました。';
+  } catch (error) {
+    console.error('Accommodation Error:', error);
+    return 'エラーが発生しました。';
+  }
+};

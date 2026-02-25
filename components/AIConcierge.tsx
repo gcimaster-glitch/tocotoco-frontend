@@ -2,6 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { GoogleGenAI, LiveServerMessage, Modality, Blob, FunctionDeclaration, Type } from '@google/genai';
 import { MessageCircle, X, Mic, Send, Minimize2, Maximize2, Loader2, Sparkles, Volume2, HelpCircle, Navigation, ExternalLink } from 'lucide-react';
 import { ViewState } from '../types';
+import { sendConciergeMessage } from '../services/geminiService';
 
 const SUGGESTED_QUESTIONS = [
   "現在の選考状況を教えて",
@@ -167,61 +168,40 @@ export const AIConcierge: React.FC<AIConciergeProps> = ({ currentView, onNavigat
   const handleSendMessage = async (text: string = inputText) => {
     if (!text.trim()) return;
     
-    setMessages(prev => [...prev, { role: 'user', text: text }]);
+    const newUserMsg = { role: 'user' as const, text };
+    setMessages(prev => [...prev, newUserMsg]);
     setInputText('');
     setIsLoading(true);
 
     try {
-        const apiKey = process.env.API_KEY;
-        if (!apiKey) throw new Error("API Key missing");
-        
-        const ai = new GoogleGenAI({ apiKey });
-        const systemPrompt = `
-          あなたは「トコトコ (Tocotoco)」のAIコンシェルジュです。
-          ${getSystemContext()}
-          
-          サイトの機能:
-          1. **AI履歴書 (AI_RESUME)**: 職務経歴書を自動作成。障がい特性の言語化サポート。
-          2. **AI一次面接 (INTERVIEW_PRACTICE)**: 24時間いつでも受験可能。
-          3. **求人検索 (JOB_SEARCH)**: 「本音フィルター」で配慮事項から求人を検索。
-          4. **AI診断 (AI_DIAGNOSTICS)**: 性格・適性診断。
-          5. **マイページ (DASHBOARD)**: 選考状況の確認。
-
-          ユーザーが「～したい」「～へ行きたい」と言った場合は、\`changePage\`ツールを使用してページを移動させてください。
-          ユーザー自身の選考状況について聞かれた場合は、提供されたコンテキスト情報を基に回答してください。
-          業界動向やニュースについて聞かれた場合は、Google検索ツールを使用して最新情報を回答してください。
-          回答は親しみやすく、短く簡潔に（200文字以内推奨）。
-        `;
-
-        // Note: Function calling combined with Google Search is supported in newer models.
-        const response = await ai.models.generateContent({
-            model: 'gemini-3-flash-preview',
-            contents: [
-                { role: 'user', parts: [{ text: systemPrompt + "\n\nユーザーの質問: " + text }] }
-            ],
-            config: {
-              tools: [{ functionDeclarations: [changePageTool] }, { googleSearch: {} }]
-            }
-        });
-
-        // Handle Function Calls
-        const functionCalls = response.functionCalls;
-        let aiMsg = response.text || "";
-        const groundingMetadata = response.candidates?.[0]?.groundingMetadata?.groundingChunks;
-
-        if (functionCalls && functionCalls.length > 0) {
-           for (const call of functionCalls) {
-              if (call.name === 'changePage') {
-                 const page = (call.args as any).page;
-                 const result = performNavigation(page);
-                 aiMsg = `${page}へ移動しました。\n` + aiMsg;
-              }
-           }
-        } else if (!aiMsg) {
-           aiMsg = "申し訳ありません。うまく聞き取れませんでした。";
+        // ナビゲーションコマンドのローカル処理
+        const navKeywords: Record<string, ViewState> = {
+          '求人検索': ViewState.JOB_SEARCH,
+          'マイページ': ViewState.DASHBOARD,
+          'AI履歴書': ViewState.AI_RESUME,
+          '面接練習': ViewState.INTERVIEW_PRACTICE,
+          'AI診断': ViewState.AI_DIAGNOSTICS,
+          'コミュニティ': ViewState.ONLINE_SALON,
+          '学習': ViewState.LEARNING,
+        };
+        for (const [keyword, view] of Object.entries(navKeywords)) {
+          if (text.includes(keyword)) {
+            performNavigation(view as string);
+            break;
+          }
         }
 
-        setMessages(prev => [...prev, { role: 'model', text: aiMsg, sources: groundingMetadata }]);
+        // バックエンド経由でAIレスポンスを取得
+        const history = messages.map(m => ({ sender: m.role === 'user' ? 'user' : 'ai', text: m.text }));
+        const userProfile = { currentView, userRole: contextData?.userRole };
+        const contextStr = getSystemContext();
+        const aiMsg = await sendConciergeMessage(
+          `${contextStr}\n\n${text}`,
+          history,
+          userProfile
+        );
+
+        setMessages(prev => [...prev, { role: 'model', text: aiMsg }]);
     } catch (e) {
         console.error(e);
         setMessages(prev => [...prev, { role: 'model', text: "エラーが発生しました。もう一度お試しください。" }]);
