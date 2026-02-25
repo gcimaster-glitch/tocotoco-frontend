@@ -1,6 +1,7 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { ViewState } from '../types';
-import { Menu, Briefcase, UserCircle, Sparkles, Mic, ShieldAlert, X, ChevronDown, User, LogOut, Building, Crown, MessageSquare, BookOpen, UserCheck, LogIn, FileText, Search, HeartHandshake } from 'lucide-react';
+import { Menu, Briefcase, UserCircle, Sparkles, Mic, ShieldAlert, X, ChevronDown, User, LogOut, Building, Crown, MessageSquare, BookOpen, UserCheck, LogIn, FileText, Search, HeartHandshake, Bell } from 'lucide-react';
+import { useAuth } from '../contexts/AuthContext';
 
 interface NavigationProps {
   currentView: ViewState;
@@ -10,6 +11,7 @@ interface NavigationProps {
 }
 
 export const Navigation: React.FC<NavigationProps> = ({ currentView, setView, userRole, setUserRole }) => {
+  const { user, logout } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const accountMenuRef = useRef<HTMLDivElement>(null);
@@ -82,8 +84,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, setView, us
               {userRole === 'job_seeker' && (
                 <>
                   <NavButton 
-                    active={currentView === ViewState.ONLINE_SALON} 
-                    onClick={() => setView(ViewState.ONLINE_SALON)} 
+                    active={currentView === ViewState.COMMUNITY} 
+                    onClick={() => setView(ViewState.COMMUNITY)} 
                     icon={<MessageSquare size={15} />} 
                     label="コミュニティ" 
                   />
@@ -177,20 +179,27 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, setView, us
                       <p className="text-[10px] text-stone-400 font-bold uppercase tracking-wider mb-2">Switch Role / Login</p>
                       
                       {/* Auth Buttons */}
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={handleLoginClick} 
-                          className="flex-1 bg-stone-900 text-white text-xs font-bold py-2 rounded-lg hover:bg-stone-800 transition-colors flex items-center justify-center gap-1"
-                        >
-                          <LogIn size={12} /> ログイン
-                        </button>
-                        <button 
-                          onClick={handleRegisterClick} 
-                          className="flex-1 bg-white border border-stone-200 text-stone-700 text-xs font-bold py-2 rounded-lg hover:bg-stone-50 transition-colors"
-                        >
-                          新規登録
-                        </button>
-                      </div>
+                      {user ? (
+                        <div className="bg-emerald-50 rounded-lg px-3 py-2">
+                          <p className="text-xs font-bold text-emerald-700">{user.display_name || user.email}</p>
+                          <p className="text-[10px] text-emerald-500">{user.role === 'seeker' ? '求職者' : user.role === 'employer' ? '企業' : user.role === 'agent' ? '支援員' : '管理者'}</p>
+                        </div>
+                      ) : (
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={handleLoginClick} 
+                            className="flex-1 bg-stone-900 text-white text-xs font-bold py-2 rounded-lg hover:bg-stone-800 transition-colors flex items-center justify-center gap-1"
+                          >
+                            <LogIn size={12} /> ログイン
+                          </button>
+                          <button 
+                            onClick={handleRegisterClick} 
+                            className="flex-1 bg-white border border-stone-200 text-stone-700 text-xs font-bold py-2 rounded-lg hover:bg-stone-50 transition-colors"
+                          >
+                            新規登録
+                          </button>
+                        </div>
+                      )}
                     </div>
 
                     <div className="py-1">
@@ -234,7 +243,10 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, setView, us
                     </div>
                     
                     <div className="border-t border-stone-100 mt-1 pt-1">
-                      <button className="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-2">
+                      <button
+                        onClick={() => { logout(); setIsAccountMenuOpen(false); setView(ViewState.HOME); }}
+                        className="w-full text-left px-4 py-2 text-xs font-bold text-red-500 hover:bg-red-50 flex items-center gap-2"
+                      >
                         <LogOut size={12} /> ログアウト
                       </button>
                     </div>
@@ -267,8 +279,8 @@ export const Navigation: React.FC<NavigationProps> = ({ currentView, setView, us
               {userRole === 'job_seeker' && (
                 <>
                   <NavButton 
-                    active={currentView === ViewState.ONLINE_SALON} 
-                    onClick={() => handleMobileNav(ViewState.ONLINE_SALON)} 
+                    active={currentView === ViewState.COMMUNITY} 
+                    onClick={() => handleMobileNav(ViewState.COMMUNITY)} 
                     icon={<MessageSquare size={18} />} 
                     label="コミュニティ" 
                   />

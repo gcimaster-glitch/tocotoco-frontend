@@ -6,7 +6,7 @@ import { Dashboard } from './components/Dashboard';
 import { MyPage } from './pages/MyPage';
 import { EmployerDashboard } from './pages/EmployerDashboard';
 import { AgentDashboard } from './components/AgentDashboard';
-import { AdminDashboard } from './components/AdminDashboard'; 
+import { AdminDashboard } from './pages/AdminDashboard';
 import { AIResumeBuilder } from './components/AIResumeBuilder';
 import { InterviewPractice } from './components/InterviewPractice';
 import { JobSearch } from './pages/JobSearch';
@@ -25,6 +25,7 @@ import { TermsOfService } from './components/TermsOfService';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { Community } from './pages/Community';
 
 // --- MOCK DATA FOR JOB SEEKER ---
 const INITIAL_APPLICATIONS = [
@@ -233,6 +234,8 @@ const AppContent: React.FC = () => {
         return <TermsOfService setView={setView} />;
       case ViewState.PRIVACY:
         return <PrivacyPolicy setView={setView} />;
+      case ViewState.COMMUNITY:
+        return <Community setView={setView} />;
       default:
         return <Home setView={setView} />;
     }

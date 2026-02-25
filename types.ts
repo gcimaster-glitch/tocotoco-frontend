@@ -130,7 +130,8 @@ export enum ViewState {
   LOGIN = 'LOGIN',
   REGISTER = 'REGISTER',
   TERMS = 'TERMS', 
-  PRIVACY = 'PRIVACY', 
+  PRIVACY = 'PRIVACY',
+  COMMUNITY = 'COMMUNITY',
 }
 
 export interface ChatMessage {

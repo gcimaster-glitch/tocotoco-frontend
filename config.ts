@@ -1,6 +1,7 @@
 
 // Feature Flags & System Configuration
 // These can be controlled via Environment Variables in the build process
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'https://tocotoco-backend.gcimaster-glitch.workers.dev';
 
 export const CONFIG = {
   // Master Switches
