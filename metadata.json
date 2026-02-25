@@ -1,0 +1,7 @@
+{
+  "name": "Tocotoco",
+  "description": "障がい者雇用支援プラットフォーム - 自分のペースで働く",
+  "requestFramePermissions": [
+    "microphone"
+  ]
+}
