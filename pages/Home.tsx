@@ -65,15 +65,12 @@ interface HomeProps {
 }
 
 export const Home: React.FC<HomeProps> = ({ setView }) => {
-  const [isVisible, setIsVisible] = useState(false);
-  const [isContentLoad, setIsContentLoad] = useState(false);
+  const [isVisible, setIsVisible] = useState(true);
+  const [isContentLoad, setIsContentLoad] = useState(true);
 
   useEffect(() => {
-    requestAnimationFrame(() => setIsVisible(true));
-    const timer = setTimeout(() => {
-      setIsContentLoad(true);
-    }, 800);
-    return () => clearTimeout(timer);
+    setIsVisible(true);
+    setIsContentLoad(true);
   }, []);
 
   return (
