@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { MessageSquare, Heart, Plus, ChevronRight, Tag, User, Clock, ArrowLeft, Send, Loader2 } from 'lucide-react';
+import { MessageSquare, Heart, Plus, ChevronRight, Tag, User, Clock, ArrowLeft, Send, Loader2, AlertCircle, Info } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader } from '../components/PageHeader';
@@ -60,6 +60,22 @@ export const Community: React.FC<CommunityProps> = () => {
   const [showNewPost, setShowNewPost] = useState(false);
   const [newPost, setNewPost] = useState({ title: '', content: '', category: 'experience' });
   const [postLoading, setPostLoading] = useState(false);
+  const [postErrors, setPostErrors] = useState<{ title?: string; content?: string }>({});
+  const [postTouched, setPostTouched] = useState<{ title?: boolean; content?: boolean }>({});
+
+  const validatePostField = (name: string, value: string): string => {
+    if (name === 'title') {
+      if (!value.trim()) return 'タイトルを入力してください';
+      if (value.trim().length < 5) return '5文字以上で入力してください';
+      if (value.length > 100) return '100文字以内で入力してください';
+    }
+    if (name === 'content') {
+      if (!value.trim()) return '本文を入力してください';
+      if (value.trim().length < 10) return '10文字以上で入力してください';
+      if (value.length > 3000) return '3000文字以内で入力してください';
+    }
+    return '';
+  };
   const [likedPosts, setLikedPosts] = useState<Set<string>>(new Set());
 
   const fetchPosts = useCallback(async () => {
@@ -128,7 +144,11 @@ export const Community: React.FC<CommunityProps> = () => {
   };
 
   const handleNewPost = async () => {
-    if (!newPost.title.trim() || !newPost.content.trim() || !token) return;
+    const titleError = validatePostField('title', newPost.title);
+    const contentError = validatePostField('content', newPost.content);
+    setPostErrors({ title: titleError, content: contentError });
+    setPostTouched({ title: true, content: true });
+    if (titleError || contentError || !token) return;
     setPostLoading(true);
     try {
       const res = await fetch(`${API_BASE_URL}/api/posts`, {
@@ -139,6 +159,8 @@ export const Community: React.FC<CommunityProps> = () => {
       if (res.ok) {
         setShowNewPost(false);
         setNewPost({ title: '', content: '', category: 'experience' });
+        setPostErrors({});
+        setPostTouched({});
         fetchPosts();
       }
     } catch { /* ignore */ }
@@ -245,39 +267,122 @@ export const Community: React.FC<CommunityProps> = () => {
         {/* 新規投稿フォーム */}
         {showNewPost && (
           <div className="bg-white rounded-2xl shadow-sm border border-emerald-200 p-6 mb-6">
-            <h3 className="font-bold text-stone-800 mb-4">新しい投稿</h3>
-            <div className="space-y-3">
-              <select
-                value={newPost.category}
-                onChange={e => setNewPost(p => ({ ...p, category: e.target.value }))}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              >
-                {CATEGORIES.filter(c => c.id).map(c => (
-                  <option key={c.id} value={c.id}>{c.label}</option>
-                ))}
-              </select>
-              <input
-                type="text"
-                placeholder="タイトル"
-                value={newPost.title}
-                onChange={e => setNewPost(p => ({ ...p, title: e.target.value }))}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              />
-              <textarea
-                placeholder="本文を入力してください..."
-                value={newPost.content}
-                onChange={e => setNewPost(p => ({ ...p, content: e.target.value }))}
-                rows={5}
-                className="w-full border border-stone-200 rounded-xl px-3 py-2 text-sm resize-none focus:outline-none focus:ring-2 focus:ring-emerald-400"
-              />
-              <div className="flex gap-2 justify-end">
-                <button onClick={() => setShowNewPost(false)} className="px-4 py-2 text-stone-500 hover:text-stone-700 text-sm">キャンセル</button>
+            <h3 className="font-bold text-stone-800 mb-1">新しい投稿</h3>
+            <p className="text-xs text-stone-400 mb-4">同じ立場の仒間に向けて、体験談や情報を共有しましょう</p>
+            <div className="space-y-4">
+
+              {/* カテゴリ選択 */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                  カテゴリ
+                  <span className="text-red-500 text-xs">必須</span>
+                </label>
+                <select
+                  value={newPost.category}
+                  onChange={e => setNewPost(p => ({ ...p, category: e.target.value }))}
+                  className="w-full border border-stone-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-emerald-400 bg-stone-50"
+                >
+                  {CATEGORIES.filter(c => c.id).map(c => (
+                    <option key={c.id} value={c.id}>{c.label}</option>
+                  ))}
+                </select>
+                <div className="flex items-center gap-1.5 text-stone-400">
+                  <Info size={12} />
+                  <p className="text-xs">投稿内容に最も近いカテゴリを選択してください</p>
+                </div>
+              </div>
+
+              {/* タイトル */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                  タイトル
+                  <span className="text-red-500 text-xs">必須</span>
+                </label>
+                <input
+                  type="text"
+                  placeholder="例：初めての障がい者雇用で就職した体験談"
+                  value={newPost.title}
+                  onChange={e => {
+                    setNewPost(p => ({ ...p, title: e.target.value }));
+                    if (postTouched.title) setPostErrors(prev => ({ ...prev, title: validatePostField('title', e.target.value) }));
+                  }}
+                  onBlur={e => {
+                    setPostTouched(prev => ({ ...prev, title: true }));
+                    setPostErrors(prev => ({ ...prev, title: validatePostField('title', e.target.value) }));
+                  }}
+                  maxLength={100}
+                  className={`w-full border rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 ${
+                    postErrors.title ? 'border-red-400 bg-red-50 focus:ring-red-200' : 'border-stone-200 bg-stone-50 focus:ring-emerald-400'
+                  }`}
+                />
+                <div className="flex items-center justify-between">
+                  {postErrors.title ? (
+                    <div className="flex items-center gap-1.5 text-red-600">
+                      <AlertCircle size={12} />
+                      <p className="text-xs">{postErrors.title}</p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-stone-400">
+                      <Info size={12} />
+                      <p className="text-xs">読む人が内容を想像できる具体的なタイトルをつけましょう</p>
+                    </div>
+                  )}
+                  <span className="text-xs text-stone-400">{newPost.title.length}/100</span>
+                </div>
+              </div>
+
+              {/* 本文 */}
+              <div className="space-y-1">
+                <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                  本文
+                  <span className="text-red-500 text-xs">必須</span>
+                </label>
+                <textarea
+                  placeholder="例：就職したきっかけ、就職活動で工夫したこと、企業にお願いした配慮事項などを自由に書いてください"
+                  value={newPost.content}
+                  onChange={e => {
+                    setNewPost(p => ({ ...p, content: e.target.value }));
+                    if (postTouched.content) setPostErrors(prev => ({ ...prev, content: validatePostField('content', e.target.value) }));
+                  }}
+                  onBlur={e => {
+                    setPostTouched(prev => ({ ...prev, content: true }));
+                    setPostErrors(prev => ({ ...prev, content: validatePostField('content', e.target.value) }));
+                  }}
+                  rows={6}
+                  maxLength={3000}
+                  className={`w-full border rounded-xl px-3 py-2.5 text-sm resize-none focus:outline-none focus:ring-2 ${
+                    postErrors.content ? 'border-red-400 bg-red-50 focus:ring-red-200' : 'border-stone-200 bg-stone-50 focus:ring-emerald-400'
+                  }`}
+                />
+                <div className="flex items-center justify-between">
+                  {postErrors.content ? (
+                    <div className="flex items-center gap-1.5 text-red-600">
+                      <AlertCircle size={12} />
+                      <p className="text-xs">{postErrors.content}</p>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5 text-stone-400">
+                      <Info size={12} />
+                      <p className="text-xs">個人情報（氏名・住所・連絡先など）は記載しないようにしてください</p>
+                    </div>
+                  )}
+                  <span className="text-xs text-stone-400">{newPost.content.length}/3000</span>
+                </div>
+              </div>
+
+              <div className="flex gap-2 justify-end pt-2">
+                <button
+                  onClick={() => { setShowNewPost(false); setPostErrors({}); setPostTouched({}); }}
+                  className="px-4 py-2 text-stone-500 hover:text-stone-700 text-sm"
+                >
+                  キャンセル
+                </button>
                 <button
                   onClick={handleNewPost}
-                  disabled={postLoading || !newPost.title.trim() || !newPost.content.trim()}
+                  disabled={postLoading}
                   className="bg-emerald-500 text-white px-6 py-2 rounded-xl text-sm font-medium hover:bg-emerald-600 disabled:opacity-50 transition-colors flex items-center gap-2"
                 >
-                  {postLoading ? <Loader2 size={14} className="animate-spin" /> : null}
+                  {postLoading ? <Loader2 size={14} className="animate-spin" /> : <Send size={14} />}
                   投稿する
                 </button>
               </div>

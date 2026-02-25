@@ -3,6 +3,7 @@ import { Job, ViewState } from '../types';
 import { JobCard } from '../components/JobCard';
 import { Search, MapPin, SlidersHorizontal, X, Check, Building2, JapaneseYen, Clock, Briefcase, Star, Send, Sparkles, Mic, Zap, Filter, FileText, BrainCircuit, HeartHandshake, ChevronDown, ChevronUp } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
+import { ApplyModal } from '../components/ApplyModal';
 
 // --- 求人データ（拡充版） ---
 const ALL_JOBS: Job[] = [
@@ -262,12 +263,21 @@ export const JobSearch: React.FC<JobSearchProps> = ({ setView, onJobSelect }) =>
     }
   }, [searchTerm, locationTerm, selectedTypes, selectedTags, sortBy]);
 
+  const [showApplyModal, setShowApplyModal] = useState(false);
+
   const handleApply = () => {
+    if (selectedJob) {
+      setShowApplyModal(true);
+    }
+  };
+
+  const handleApplySuccess = () => {
+    setShowApplyModal(false);
     setIsApplied(true);
     setTimeout(() => {
       setSelectedJob(null);
       setIsApplied(false);
-    }, 2000);
+    }, 3000);
   };
 
   const handleStartInterview = () => {
@@ -283,6 +293,7 @@ export const JobSearch: React.FC<JobSearchProps> = ({ setView, onJobSelect }) =>
   const displayedTags = showAllTags ? ACCOMMODATION_TAGS : ACCOMMODATION_TAGS.slice(0, 10);
 
   return (
+    <>
     <div className="w-full">
       <PageHeader
         title="求人検索"
@@ -631,5 +642,25 @@ export const JobSearch: React.FC<JobSearchProps> = ({ setView, onJobSelect }) =>
 
       </div>
     </div>
+
+    {/* 求人応募モーダル */}
+    {showApplyModal && selectedJob && (
+      <ApplyModal
+        job={{
+          id: selectedJob.id,
+          title: selectedJob.title,
+          company: selectedJob.company,
+          location: selectedJob.location,
+          salary: selectedJob.salary,
+          type: selectedJob.type,
+          tags: selectedJob.tags,
+          accommodations: (selectedJob as any).accommodations,
+          requirements: (selectedJob as any).requirements,
+        }}
+        onClose={() => setShowApplyModal(false)}
+        onSuccess={handleApplySuccess}
+      />
+    )}
+    </>
   );
 };

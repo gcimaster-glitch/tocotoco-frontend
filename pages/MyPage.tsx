@@ -4,7 +4,7 @@ import { CONFIG } from '../config';
 import { ViewState } from '../types';
 import {
   User, Briefcase, FileText, Settings, LogOut, ChevronRight,
-  CheckCircle2, Clock, XCircle, AlertCircle, Loader2, Edit3, Save
+  CheckCircle2, Clock, XCircle, AlertCircle, Loader2, Edit3, Save, Info
 } from 'lucide-react';
 
 interface MyPageProps {
@@ -90,7 +90,28 @@ export const MyPage: React.FC<MyPageProps> = ({ setView }) => {
     }
   };
 
+  const [profileErrors, setProfileErrors] = useState<Record<string, string>>({});
+
+  const validateProfile = (): boolean => {
+    const newErrors: Record<string, string> = {};
+    if (profile.self_pr && profile.self_pr.length > 1000) {
+      newErrors.self_pr = '1000文字以内で入力してください';
+    }
+    if (profile.accommodations && profile.accommodations.length > 500) {
+      newErrors.accommodations = '500文字以内で入力してください';
+    }
+    if (profile.desired_job_type && profile.desired_job_type.length > 100) {
+      newErrors.desired_job_type = '100文字以内で入力してください';
+    }
+    if (profile.desired_location && profile.desired_location.length > 100) {
+      newErrors.desired_location = '100文字以内で入力してください';
+    }
+    setProfileErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleProfileSave = async () => {
+    if (!validateProfile()) return;
     setIsSavingProfile(true);
     setError('');
     try {
@@ -219,11 +240,21 @@ export const MyPage: React.FC<MyPageProps> = ({ setView }) => {
               <div className="flex justify-center py-12"><Loader2 size={24} className="animate-spin text-stone-400" /></div>
             ) : (
               <div className="bg-white rounded-2xl border border-stone-200 p-6 space-y-5">
+
+                {/* 障がい情報 */}
+                <div className="pb-4 border-b border-stone-100">
+                  <h3 className="text-sm font-bold text-stone-700 mb-1">障がい情報</h3>
+                  <p className="text-xs text-stone-400">求人マッチングに使用されます。入力することでより適切な求人が表示されます</p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-stone-600">障がい種別</label>
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                      障がい種別
+                      <span className="text-stone-400 text-xs font-normal">任意</span>
+                    </label>
                     <select
-                      className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 text-stone-800 text-sm transition-all outline-none hover:border-stone-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 appearance-none"
                       value={profile.disability_type || ''}
                       onChange={e => setProfile({ ...profile, disability_type: e.target.value })}
                     >
@@ -234,29 +265,68 @@ export const MyPage: React.FC<MyPageProps> = ({ setView }) => {
                       <option value="developmental">発達障がい</option>
                       <option value="other">その他</option>
                     </select>
+                    <div className="flex items-center gap-1.5 text-stone-400">
+                      <Info size={12} />
+                      <p className="text-xs">障がい者手帳に記載の種別を選択してください</p>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-stone-600">障がい等級</label>
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                      障がい等級
+                      <span className="text-stone-400 text-xs font-normal">任意</span>
+                    </label>
                     <input
                       type="text" placeholder="例：2級"
-                      className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 text-stone-800 text-sm transition-all outline-none hover:border-stone-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100"
                       value={profile.disability_grade || ''}
                       onChange={e => setProfile({ ...profile, disability_grade: e.target.value })}
                     />
+                    <div className="flex items-center gap-1.5 text-stone-400">
+                      <Info size={12} />
+                      <p className="text-xs">障がい者手帳に記載の等級を入力してください（例：2級、A判定）</p>
+                    </div>
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-stone-600">希望職種</label>
+                </div>
+
+                {/* 希望勤務条件 */}
+                <div className="pb-4 border-b border-stone-100 pt-2">
+                  <h3 className="text-sm font-bold text-stone-700 mb-1">希望勤務条件</h3>
+                  <p className="text-xs text-stone-400">希望する働き方を入力することで、より適切な求人が表示されます</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                      希望職種
+                      <span className="text-stone-400 text-xs font-normal">任意</span>
+                    </label>
                     <input
                       type="text" placeholder="例：事務・データ入力"
-                      className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
+                      className={`w-full px-4 py-3 rounded-xl border text-stone-800 text-sm transition-all outline-none ${
+                        profileErrors.desired_job_type ? 'border-red-400 bg-red-50' : 'border-stone-200 bg-stone-50 hover:border-stone-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100'
+                      }`}
                       value={profile.desired_job_type || ''}
                       onChange={e => setProfile({ ...profile, desired_job_type: e.target.value })}
                     />
+                    {profileErrors.desired_job_type ? (
+                      <div className="flex items-center gap-1.5 text-red-600">
+                        <AlertCircle size={12} />
+                        <p className="text-xs">{profileErrors.desired_job_type}</p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-stone-400">
+                        <Info size={12} />
+                        <p className="text-xs">希望する職種を複数入力できます（例：事務・データ入力、販売）</p>
+                      </div>
+                    )}
                   </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-stone-600">希望勤務形態</label>
+                  <div className="space-y-1">
+                    <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                      希望勤務形態
+                      <span className="text-stone-400 text-xs font-normal">任意</span>
+                    </label>
                     <select
-                      className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
+                      className="w-full px-4 py-3 rounded-xl border border-stone-200 bg-stone-50 text-stone-800 text-sm transition-all outline-none hover:border-stone-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100 appearance-none"
                       value={profile.desired_work_style || ''}
                       onChange={e => setProfile({ ...profile, desired_work_style: e.target.value })}
                     >
@@ -268,35 +338,104 @@ export const MyPage: React.FC<MyPageProps> = ({ setView }) => {
                       <option value="a-type">就労継続支援A型</option>
                       <option value="b-type">就労継続支援B型</option>
                     </select>
+                    <div className="flex items-center gap-1.5 text-stone-400">
+                      <Info size={12} />
+                      <p className="text-xs">希望する雇用形態を選択してください</p>
+                    </div>
                   </div>
-                  <div className="space-y-2 md:col-span-2">
-                    <label className="text-xs font-bold text-stone-600">希望勤務地</label>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                      希望勤務地
+                      <span className="text-stone-400 text-xs font-normal">任意</span>
+                    </label>
                     <input
                       type="text" placeholder="例：東京都、在宅可"
-                      className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
+                      className={`w-full px-4 py-3 rounded-xl border text-stone-800 text-sm transition-all outline-none ${
+                        profileErrors.desired_location ? 'border-red-400 bg-red-50' : 'border-stone-200 bg-stone-50 hover:border-stone-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100'
+                      }`}
                       value={profile.desired_location || ''}
                       onChange={e => setProfile({ ...profile, desired_location: e.target.value })}
                     />
+                    {profileErrors.desired_location ? (
+                      <div className="flex items-center gap-1.5 text-red-600">
+                        <AlertCircle size={12} />
+                        <p className="text-xs">{profileErrors.desired_location}</p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-stone-400">
+                        <Info size={12} />
+                        <p className="text-xs">希望する勤務地や都道府県を入力してください（例：東京都渋谷区、全国可）</p>
+                      </div>
+                    )}
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-600">必要な支援・配慮事項</label>
+
+                {/* 配慮事項・自己PR */}
+                <div className="pb-4 border-b border-stone-100 pt-2">
+                  <h3 className="text-sm font-bold text-stone-700 mb-1">配慮事項・自己PR</h3>
+                  <p className="text-xs text-stone-400">具体的に記載することで、マッチング精度が向上します</p>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                    必要な支援・配慮事項
+                    <span className="text-stone-400 text-xs font-normal">任意</span>
+                  </label>
                   <textarea
-                    rows={3} placeholder="例：週3日勤務、通院のための中抜け可、静かな環境での作業"
-                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all resize-none"
+                    rows={3} placeholder="例：週３日勤務、通院のための中抜け可、静かな環境での作業"
+                    className={`w-full px-4 py-3 rounded-xl border text-stone-800 text-sm transition-all outline-none resize-none ${
+                      profileErrors.accommodations ? 'border-red-400 bg-red-50' : 'border-stone-200 bg-stone-50 hover:border-stone-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100'
+                    }`}
                     value={profile.accommodations || ''}
                     onChange={e => setProfile({ ...profile, accommodations: e.target.value })}
+                    maxLength={500}
                   />
+                  <div className="flex items-center justify-between">
+                    {profileErrors.accommodations ? (
+                      <div className="flex items-center gap-1.5 text-red-600">
+                        <AlertCircle size={12} />
+                        <p className="text-xs">{profileErrors.accommodations}</p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-stone-400">
+                        <Info size={12} />
+                        <p className="text-xs">必要な配慮を具体的に記載することで、就労定着率が向上します</p>
+                      </div>
+                    )}
+                    <span className="text-xs text-stone-400">{(profile.accommodations || '').length}/500</span>
+                  </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-600">自己PR</label>
+
+                <div className="space-y-1">
+                  <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                    自己PR
+                    <span className="text-stone-400 text-xs font-normal">任意</span>
+                  </label>
                   <textarea
-                    rows={4} placeholder="あなたの強みや経験を入力してください"
-                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all resize-none"
+                    rows={5} placeholder="あなたの強みや経験を入力してください。例：前職での経験、得意なこと、就労に向けた目標など"
+                    className={`w-full px-4 py-3 rounded-xl border text-stone-800 text-sm transition-all outline-none resize-none ${
+                      profileErrors.self_pr ? 'border-red-400 bg-red-50' : 'border-stone-200 bg-stone-50 hover:border-stone-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100'
+                    }`}
                     value={profile.self_pr || ''}
                     onChange={e => setProfile({ ...profile, self_pr: e.target.value })}
+                    maxLength={1000}
                   />
+                  <div className="flex items-center justify-between">
+                    {profileErrors.self_pr ? (
+                      <div className="flex items-center gap-1.5 text-red-600">
+                        <AlertCircle size={12} />
+                        <p className="text-xs">{profileErrors.self_pr}</p>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1.5 text-stone-400">
+                        <Info size={12} />
+                        <p className="text-xs">自己PRは応募書類に自動反映されます。具体的なエピソードを含めると強い印象を与えられます</p>
+                      </div>
+                    )}
+                    <span className="text-xs text-stone-400">{(profile.self_pr || '').length}/1000</span>
+                  </div>
                 </div>
+
               </div>
             )}
           </div>

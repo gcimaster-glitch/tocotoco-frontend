@@ -6,6 +6,8 @@ import {
   Building2, Briefcase, Users, LogOut, Plus, Eye, Edit3,
   CheckCircle2, Clock, XCircle, AlertCircle, Loader2, ChevronRight, ToggleLeft, ToggleRight
 } from 'lucide-react';
+import { FormField, FormSection } from '../components/FormField';
+import { validateField } from '../utils/validation';
 
 interface EmployerDashboardProps {
   setView: (view: ViewState) => void;
@@ -67,6 +69,60 @@ export const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ setView })
     disability_types: [] as string[],
     requirements: '',
   });
+  const [jobFormErrors, setJobFormErrors] = useState<Record<string, string>>({});
+  const [jobFormTouched, setJobFormTouched] = useState<Record<string, boolean>>({});
+
+  const handleJobFormChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setJobForm(prev => ({ ...prev, [name]: value }));
+    if (jobFormTouched[name]) {
+      validateJobField(name, value);
+    }
+  };
+
+  const handleJobFormBlur = (e: React.FocusEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setJobFormTouched(prev => ({ ...prev, [name]: true }));
+    validateJobField(name, value);
+  };
+
+  const validateJobField = (name: string, value: string) => {
+    let error = '';
+    if (name === 'title') error = validateField(value, { required: true, minLength: 5, maxLength: 60 });
+    if (name === 'location') error = validateField(value, { required: true, maxLength: 100 });
+    if (name === 'job_type') error = validateField(value, { required: true, maxLength: 50 });
+    if (name === 'description') error = validateField(value, { required: true, minLength: 30, maxLength: 2000 });
+    if (name === 'requirements') error = validateField(value, { maxLength: 1000 });
+    if (name === 'accommodations') error = validateField(value, { maxLength: 1000 });
+    if (name === 'salary_min' && value) {
+      if (!/^\d+$/.test(value)) error = '半角数字のみで入力してください';
+    }
+    if (name === 'salary_max' && value) {
+      if (!/^\d+$/.test(value)) error = '半角数字のみで入力してください';
+      if (jobForm.salary_min && parseInt(value) < parseInt(jobForm.salary_min)) error = '給与上限は下限以上の値を入力してください';
+    }
+    setJobFormErrors(prev => ({ ...prev, [name]: error || '' }));
+  };
+
+  const validateJobForm = (): boolean => {
+    const fields: Record<string, string> = {
+      title: jobForm.title,
+      location: jobForm.location,
+      job_type: jobForm.job_type,
+      description: jobForm.description,
+    };
+    const newErrors: Record<string, string> = {};
+    let hasError = false;
+    if (!jobForm.title.trim()) { newErrors.title = 'この項目は必須です'; hasError = true; }
+    else if (jobForm.title.trim().length < 5) { newErrors.title = '5文字以上で入力してください'; hasError = true; }
+    if (!jobForm.location.trim()) { newErrors.location = 'この項目は必須です'; hasError = true; }
+    if (!jobForm.job_type.trim()) { newErrors.job_type = 'この項目は必須です'; hasError = true; }
+    if (!jobForm.description.trim()) { newErrors.description = 'この項目は必須です'; hasError = true; }
+    else if (jobForm.description.trim().length < 30) { newErrors.description = '30文字以上で記入してください'; hasError = true; }
+    setJobFormErrors(newErrors);
+    setJobFormTouched({ title: true, location: true, job_type: true, description: true });
+    return !hasError;
+  };
 
   useEffect(() => {
     fetchJobs();
@@ -109,8 +165,8 @@ export const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ setView })
 
   const handlePostJob = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!jobForm.title || !jobForm.description || !jobForm.location || !jobForm.job_type) {
-      setError('必須項目を入力してください');
+    if (!validateJobForm()) {
+      setError('入力内容に誤りがあります。各項目を確認してください');
       return;
     }
     setIsPosting(true);
@@ -335,65 +391,108 @@ export const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ setView })
                 <p className="text-sm text-stone-500 mt-1">求人一覧に反映されます</p>
               </div>
             ) : (
-              <form onSubmit={handlePostJob} className="bg-white rounded-2xl border border-stone-200 p-6 space-y-5">
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-600">求人タイトル<span className="text-red-500 ml-1">*</span></label>
-                  <input
-                    type="text" placeholder="例：事務スタッフ（障がい者雇用・週3日〜）" required
-                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
-                    value={jobForm.title} onChange={e => setJobForm({ ...jobForm, title: e.target.value })}
-                  />
-                </div>
+              <form onSubmit={handlePostJob} className="bg-white rounded-2xl border border-stone-200 p-6 space-y-6">
+
+                {/* 基本情報 */}
+                <FormSection
+                  title="基本情報"
+                  description="求職者が最初に確認する重要な情報です"
+                  icon={<Briefcase size={16} />}
+                />
+
+                <FormField
+                  label="求人タイトル"
+                  name="title"
+                  value={jobForm.title}
+                  onChange={handleJobFormChange}
+                  onBlur={handleJobFormBlur}
+                  placeholder="例：事務スタッフ（障がい者雇用・週３日〜）"
+                  hint="職種名と主な特徴（例：在宅OK、時短勤務）を含めるとクリック率が向上します"
+                  error={jobFormErrors.title}
+                  required
+                  maxLength={60}
+                />
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-stone-600">勤務地<span className="text-red-500 ml-1">*</span></label>
-                    <input
-                      type="text" placeholder="例：東京都渋谷区（在宅可）" required
-                      className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
-                      value={jobForm.location} onChange={e => setJobForm({ ...jobForm, location: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-stone-600">職種<span className="text-red-500 ml-1">*</span></label>
-                    <input
-                      type="text" placeholder="例：データ入力・事務" required
-                      className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
-                      value={jobForm.job_type} onChange={e => setJobForm({ ...jobForm, job_type: e.target.value })}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-stone-600">雇用形態</label>
-                    <select
-                      className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all appearance-none"
-                      value={jobForm.work_style} onChange={e => setJobForm({ ...jobForm, work_style: e.target.value })}
-                    >
-                      <option value="fulltime">正社員</option>
-                      <option value="parttime">パート・アルバイト</option>
-                      <option value="contract">契約社員</option>
-                      <option value="remote">在宅・リモート</option>
-                      <option value="a-type">就労継続支援A型</option>
-                      <option value="b-type">就労継続支援B型</option>
-                    </select>
-                  </div>
-                  <div className="space-y-2">
-                    <label className="text-xs font-bold text-stone-600">給与（月額・円）</label>
+                  <FormField
+                    label="勤務地"
+                    name="location"
+                    value={jobForm.location}
+                    onChange={handleJobFormChange}
+                    onBlur={handleJobFormBlur}
+                    placeholder="例：東京都渋谷区（在宅可）"
+                    hint="最寄り駅からの距離も記載すると求職者が通勤を検討しやすくなります"
+                    error={jobFormErrors.location}
+                    required
+                    maxLength={100}
+                  />
+                  <FormField
+                    label="職種"
+                    name="job_type"
+                    value={jobForm.job_type}
+                    onChange={handleJobFormChange}
+                    onBlur={handleJobFormBlur}
+                    placeholder="例：データ入力・事務"
+                    hint="具体的な業務内容を簡潔に記載してください"
+                    error={jobFormErrors.job_type}
+                    required
+                    maxLength={50}
+                  />
+                  <FormField
+                    label="雇用形態"
+                    name="work_style"
+                    value={jobForm.work_style}
+                    onChange={handleJobFormChange}
+                    onBlur={handleJobFormBlur}
+                    hint="就労継続支援事業所の場合はA型・B型を選択してください"
+                  >
+                    <option value="fulltime">正社員（障がい者枚）</option>
+                    <option value="parttime">パート・アルバイト</option>
+                    <option value="contract">契約社員</option>
+                    <option value="remote">在宅・リモート</option>
+                    <option value="a-type">就労継続支援A型</option>
+                    <option value="b-type">就労継続支援B型</option>
+                  </FormField>
+                  <div className="space-y-1.5">
+                    <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                      給与（月額・円）
+                      <span className="text-stone-400 text-xs font-normal">任意</span>
+                    </label>
                     <div className="flex gap-2 items-center">
                       <input
-                        type="number" placeholder="180000"
-                        className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
-                        value={jobForm.salary_min} onChange={e => setJobForm({ ...jobForm, salary_min: e.target.value })}
+                        type="text" name="salary_min" placeholder="180000"
+                        className={`w-full px-4 py-3 rounded-xl border text-stone-800 text-sm transition-all outline-none ${
+                          jobFormErrors.salary_min ? 'border-red-400 bg-red-50' : 'border-stone-200 bg-stone-50 hover:border-stone-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100'
+                        }`}
+                        value={jobForm.salary_min}
+                        onChange={handleJobFormChange}
+                        onBlur={handleJobFormBlur}
                       />
-                      <span className="text-stone-400">〜</span>
+                      <span className="text-stone-400 flex-shrink-0">〜</span>
                       <input
-                        type="number" placeholder="250000"
-                        className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
-                        value={jobForm.salary_max} onChange={e => setJobForm({ ...jobForm, salary_max: e.target.value })}
+                        type="text" name="salary_max" placeholder="250000"
+                        className={`w-full px-4 py-3 rounded-xl border text-stone-800 text-sm transition-all outline-none ${
+                          jobFormErrors.salary_max ? 'border-red-400 bg-red-50' : 'border-stone-200 bg-stone-50 hover:border-stone-300 focus:border-emerald-400 focus:ring-2 focus:ring-emerald-100'
+                        }`}
+                        value={jobForm.salary_max}
+                        onChange={handleJobFormChange}
+                        onBlur={handleJobFormBlur}
                       />
                     </div>
+                    {(jobFormErrors.salary_min || jobFormErrors.salary_max) && (
+                      <p className="text-xs text-red-600">{jobFormErrors.salary_min || jobFormErrors.salary_max}</p>
+                    )}
+                    <p className="text-xs text-stone-400">入力例：180000（単位：円）。上限なしの場合は上限欄は空欄でOKです</p>
                   </div>
                 </div>
+
+                {/* 障がい種別 */}
                 <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-600">対象障がい種別</label>
+                  <label className="flex items-center gap-1.5 text-sm font-semibold text-stone-700">
+                    対象障がい種別
+                    <span className="text-stone-400 text-xs font-normal">任意</span>
+                  </label>
+                  <p className="text-xs text-stone-500">該当する障がい種別を選択してください（複数選択可）</p>
                   <div className="flex flex-wrap gap-2">
                     {disabilityOptions.map(opt => {
                       const isSelected = jobForm.disability_types.includes(opt.value);
@@ -407,7 +506,9 @@ export const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ setView })
                               : [...jobForm.disability_types, opt.value];
                             setJobForm({ ...jobForm, disability_types: updated });
                           }}
-                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${isSelected ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-600 border-stone-200 hover:border-stone-400'}`}
+                          className={`px-3 py-1.5 rounded-full text-xs font-medium border transition-colors ${
+                            isSelected ? 'bg-emerald-600 text-white border-emerald-600' : 'bg-white text-stone-600 border-stone-200 hover:border-emerald-400 hover:text-emerald-600'
+                          }`}
                         >
                           {opt.label}
                         </button>
@@ -415,30 +516,61 @@ export const EmployerDashboard: React.FC<EmployerDashboardProps> = ({ setView })
                     })}
                   </div>
                 </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-600">仕事内容<span className="text-red-500 ml-1">*</span></label>
-                  <textarea
-                    rows={4} placeholder="具体的な業務内容を記載してください" required
-                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all resize-none"
-                    value={jobForm.description} onChange={e => setJobForm({ ...jobForm, description: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-600">応募要件</label>
-                  <textarea
-                    rows={3} placeholder="必要なスキル・経験・資格など"
-                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all resize-none"
-                    value={jobForm.requirements} onChange={e => setJobForm({ ...jobForm, requirements: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-xs font-bold text-stone-600">提供できる配慮事項</label>
-                  <textarea
-                    rows={3} placeholder="例：週3日勤務可、在宅勤務可、通院のための中抜け可、バリアフリー対応"
-                    className="w-full p-3 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all resize-none"
-                    value={jobForm.accommodations} onChange={e => setJobForm({ ...jobForm, accommodations: e.target.value })}
-                  />
-                </div>
+
+                {/* 詳細情報 */}
+                <FormSection
+                  title="詳細情報"
+                  description="求職者が仕事をイメージできるよう具体的に記載してください"
+                  icon={<Eye size={16} />}
+                />
+
+                <FormField
+                  label="仕事内容"
+                  name="description"
+                  value={jobForm.description}
+                  onChange={handleJobFormChange}
+                  onBlur={handleJobFormBlur}
+                  placeholder="具体的な業務内容、１日の流れ、チームの雰囲気などを記載してください..."
+                  hint="求職者が仕事をイメージできるよう、具体的に記載してください。箇条書きも使えます"
+                  error={jobFormErrors.description}
+                  required
+                  rows={5}
+                  maxLength={2000}
+                />
+
+                <FormField
+                  label="応募要件"
+                  name="requirements"
+                  value={jobForm.requirements}
+                  onChange={handleJobFormChange}
+                  onBlur={handleJobFormBlur}
+                  placeholder="必要なスキル・経験・資格など"
+                  hint="必須条件と歓迎条件を分けて記載すると応募者が判断しやすくなります"
+                  error={jobFormErrors.requirements}
+                  rows={3}
+                  maxLength={1000}
+                />
+
+                <FormField
+                  label="提供できる配慮事項"
+                  name="accommodations"
+                  value={jobForm.accommodations}
+                  onChange={handleJobFormChange}
+                  onBlur={handleJobFormBlur}
+                  placeholder="例：週３日勤務可、在宅勤務可、通院のための中抜け可、バリアフリー対応"
+                  hint="具体的な配慮事項を記載することで、求職者とのマッチング精度が上がります"
+                  error={jobFormErrors.accommodations}
+                  rows={3}
+                  maxLength={1000}
+                />
+
+                {error && (
+                  <div className="flex items-start gap-2 p-3 bg-red-50 border border-red-200 rounded-xl">
+                    <AlertCircle size={15} className="text-red-500 mt-0.5 flex-shrink-0" />
+                    <p className="text-sm text-red-700">{error}</p>
+                  </div>
+                )}
+
                 <button
                   type="submit" disabled={isPosting}
                   className="w-full bg-stone-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-stone-800 transition-all shadow-lg flex items-center justify-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
