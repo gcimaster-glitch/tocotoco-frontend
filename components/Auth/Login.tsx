@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { ViewState } from '../../types';
-import { Sparkles, ArrowRight, Lock } from 'lucide-react';
+import { Sparkles, ArrowRight, Lock, AlertCircle, Loader2 } from 'lucide-react';
+import { useAuth } from '../../contexts/AuthContext';
 
 interface LoginProps {
   setView: (view: ViewState) => void;
@@ -8,19 +9,27 @@ interface LoginProps {
 }
 
 export const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  const { login } = useAuth();
+  const [formData, setFormData] = useState({ email: '', password: '' });
+  const [error, setError] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    if (error) setError('');
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // In a real app, authentication API call would happen here.
-    onLogin();
+    setIsLoading(true);
+    setError('');
+    const result = await login(formData.email, formData.password);
+    if (result.success) {
+      onLogin();
+    } else {
+      setError(result.error || 'ログインに失敗しました');
+    }
+    setIsLoading(false);
   };
 
   return (
@@ -56,33 +65,42 @@ export const Login: React.FC<LoginProps> = ({ setView, onLogin }) => {
             </p>
           </div>
 
+          {error && (
+            <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl flex items-start gap-3">
+              <AlertCircle size={18} className="text-red-500 mt-0.5 flex-shrink-0" />
+              <p className="text-sm text-red-700">{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div className="space-y-2">
               <label className="text-xs font-bold text-stone-600">メールアドレス</label>
-              <input 
+              <input
                 type="email" name="email" placeholder="example@tocotoco.jp" required
                 className="w-full p-4 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all"
-                value={formData.email} onChange={handleChange}
+                value={formData.email} onChange={handleChange} disabled={isLoading}
               />
             </div>
-
             <div className="space-y-2">
-              <div className="flex justify-between">
-                <label className="text-xs font-bold text-stone-600">パスワード</label>
-                <a href="#" className="text-xs text-emerald-600 hover:underline">パスワードをお忘れですか？</a>
-              </div>
+              <label className="text-xs font-bold text-stone-600">パスワード</label>
               <div className="relative">
-                <input 
-                  type="password" name="password" placeholder="********" required
+                <input
+                  type="password" name="password" placeholder="8文字以上" required
                   className="w-full p-4 bg-stone-50 border border-stone-200 rounded-xl focus:bg-white focus:ring-2 focus:ring-stone-900 outline-none transition-all pr-10"
-                  value={formData.password} onChange={handleChange}
+                  value={formData.password} onChange={handleChange} disabled={isLoading}
                 />
                 <Lock size={18} className="absolute right-4 top-1/2 -translate-y-1/2 text-stone-400" />
               </div>
             </div>
-
-            <button type="submit" className="w-full bg-stone-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-stone-800 transition-all shadow-lg flex items-center justify-center gap-2 group mt-4">
-              ログイン <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
+            <button
+              type="submit" disabled={isLoading}
+              className="w-full bg-stone-900 text-white py-4 rounded-xl font-bold text-lg hover:bg-stone-800 transition-all shadow-lg flex items-center justify-center gap-2 group mt-4 disabled:opacity-60 disabled:cursor-not-allowed"
+            >
+              {isLoading ? (
+                <><Loader2 size={20} className="animate-spin" /> ログイン中...</>
+              ) : (
+                <>ログイン <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" /></>
+              )}
             </button>
 
             <div className="text-center pt-8 border-t border-stone-100">

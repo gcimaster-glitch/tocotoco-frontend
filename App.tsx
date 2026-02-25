@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useLayoutEffect } from 'react';
+import React, { useState, useLayoutEffect } from 'react';
 import { ViewState, Job, PipelineItem } from './types';
 import { Navigation } from './components/Navigation';
 import { Home } from './pages/Home';
 import { Dashboard } from './components/Dashboard';
+import { MyPage } from './pages/MyPage';
+import { EmployerDashboard } from './pages/EmployerDashboard';
 import { AgentDashboard } from './components/AgentDashboard';
 import { AdminDashboard } from './components/AdminDashboard'; 
 import { AIResumeBuilder } from './components/AIResumeBuilder';
@@ -22,6 +24,7 @@ import { Login } from './components/Auth/Login';
 import { TermsOfService } from './components/TermsOfService';
 import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { OnboardingWizard } from './components/OnboardingWizard';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 // --- MOCK DATA FOR JOB SEEKER ---
 const INITIAL_APPLICATIONS = [
@@ -77,7 +80,8 @@ const MOCK_EMPLOYER_JOBS: Job[] = [
   { id: 'j2', title: '軽作業スタッフ', catchphrase: '未経験歓迎', company: '自社', location: '埼玉', salary: '時給1100円', type: 'Part-time', tags: [], celebrationMoney: 0, imageUrl: '', analysisScore: 92 },
 ];
 
-const App: React.FC = () => {
+const AppContent: React.FC = () => {
+  const { user } = useAuth();
   const [currentView, setView] = useState<ViewState>(ViewState.HOME);
   const [userRole, setUserRole] = useState<'job_seeker' | 'employer' | 'admin' | 'agent'>('job_seeker');
   const [selectedJobForInterview, setSelectedJobForInterview] = useState<Job | null>(null);
@@ -152,7 +156,12 @@ const App: React.FC = () => {
 
   const handleAuthComplete = () => {
     setShowOnboarding(true);
-    setView(ViewState.DASHBOARD);
+    // ロールに応じてリダイレクト先を変更
+    if (user?.role === 'employer') {
+      setView(ViewState.EMPLOYER_DASHBOARD);
+    } else {
+      setView(ViewState.MY_PAGE);
+    }
   };
 
   const renderView = () => {
@@ -176,6 +185,10 @@ const App: React.FC = () => {
             diagnosticResults={diagnosticResults} 
           />
         );
+      case ViewState.MY_PAGE:
+        return <MyPage setView={setView} />;
+      case ViewState.EMPLOYER_DASHBOARD:
+        return <EmployerDashboard setView={setView} />;
       case ViewState.AGENT_DASHBOARD:
         return <AgentDashboard setView={setView} />;
       case ViewState.AGENT_PROFILE_EDIT:
@@ -278,5 +291,11 @@ const App: React.FC = () => {
     </div>
   );
 };
+
+const App: React.FC = () => (
+  <AuthProvider>
+    <AppContent />
+  </AuthProvider>
+);
 
 export default App;
