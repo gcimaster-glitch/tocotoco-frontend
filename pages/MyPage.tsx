@@ -4,7 +4,7 @@ import { CONFIG } from '../config';
 import { ViewState } from '../types';
 import {
   User, Briefcase, FileText, Settings, LogOut, ChevronRight,
-  CheckCircle2, Clock, XCircle, AlertCircle, Loader2, Edit3, Save, Info
+  CheckCircle2, Clock, XCircle, AlertCircle, Loader2, Edit3, Save, Info, Video, BarChart3
 } from 'lucide-react';
 
 interface MyPageProps {
@@ -219,6 +219,25 @@ export const MyPage: React.FC<MyPageProps> = ({ setView }) => {
                 })}
               </div>
             )}
+
+            {/* AI面接レポートカード */}
+            <div className="mt-6 bg-gradient-to-br from-emerald-50 to-teal-50 rounded-2xl border border-emerald-200 p-5">
+              <div className="flex items-start gap-3 mb-3">
+                <div className="w-10 h-10 bg-emerald-100 rounded-xl flex items-center justify-center flex-shrink-0">
+                  <Video size={20} className="text-emerald-600" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-emerald-900">AI面接レポート</h3>
+                  <p className="text-xs text-emerald-700 mt-0.5">面接練習の分析結果・フィードバックを確認できます</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setView(ViewState.INTERVIEW_REPORT_LIST)}
+                className="w-full flex items-center justify-center gap-2 bg-emerald-600 text-white py-2.5 rounded-xl text-sm font-bold hover:bg-emerald-700 transition-colors"
+              >
+                <BarChart3 size={16} /> レポート一覧を見る
+              </button>
+            </div>
           </div>
         )}
 

@@ -280,9 +280,12 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({
     const jobTitle = job?.title || '一般事務・軽作業（障がい者枠）';
     const structured = await generateInterviewReportApi(jobTitle, messages);
     if (onComplete) {
+      // onCompleteが設定されている場合は外部（App.tsx）が画面遷移を管理するため
+      // setStep('complete')は呼ばない
       onComplete(structured);
+    } else {
+      setStep('complete');
     }
-    setStep('complete');
   }, [job, messages, onComplete]);
 
   const handleRetry = useCallback(() => {
