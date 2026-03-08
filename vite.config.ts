@@ -13,7 +13,7 @@ export default defineConfig(({ mode }) => {
       },
       plugins: [react()],
       define: {
-        'process.env.VITE_API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL || 'https://tocotoco-backend.gcimaster-glitch.workers.dev'),
+        'process.env.VITE_API_BASE_URL': JSON.stringify(env.VITE_API_BASE_URL || 'https://tocotoco-backend.gcimaster.workers.dev'),
       },
       resolve: {
         alias: {

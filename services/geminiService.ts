@@ -2,7 +2,7 @@
 // AIの呼び出しはすべてバックエンド（Cloudflare Workers）経由で行う
 // APIキーはフロントエンドには一切保持しない
 
-const API_BASE_URL = (process.env.VITE_API_BASE_URL as string) || 'https://tocotoco-backend.gcimaster-glitch.workers.dev';
+const API_BASE_URL = (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_BASE_URL as string) || 'https://tocotoco-backend.gcimaster.workers.dev';
 
 // Interface for structured resume data
 export interface ResumeData {
