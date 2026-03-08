@@ -48,7 +48,7 @@ jobs:
         uses: actions/checkout@v4
         with:
           repository: gcimaster-glitch/tocotoco-backend
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ secrets.BACKEND_GITHUB_TOKEN }}
           path: backend
 
       - name: Setup Node.js
