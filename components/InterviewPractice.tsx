@@ -56,8 +56,8 @@ interface SpeechRecognitionInstance extends EventTarget {
 // ============================================================
 
 const API_BASE_URL =
-  (typeof process !== 'undefined' && process.env?.VITE_API_BASE_URL) ||
-  'https://tocotoco-backend.gcimaster-glitch.workers.dev';
+  (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_API_BASE_URL) ||
+  'https://tocotoco-backend.gcimaster.workers.dev';
 
 async function fetchAIInterviewMessage(
   jobTitle: string,
