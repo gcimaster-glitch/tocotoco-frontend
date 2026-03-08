@@ -1,7 +1,7 @@
 
 // Feature Flags & System Configuration
 // These can be controlled via Environment Variables in the build process
-export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'https://tocotoco-backend.gcimaster-glitch.workers.dev';
+export const API_BASE_URL = (import.meta.env.VITE_API_BASE_URL as string) || 'https://tocotoco-backend.gcimaster.workers.dev';
 
 export const CONFIG = {
   // Master Switches
@@ -9,7 +9,7 @@ export const CONFIG = {
   ENABLE_KYC: true,     // Set to false to disable Identity Verification
   
   // API Endpoints (Cloudflare Workers Backend)
-  API_BASE_URL: (process.env.VITE_API_BASE_URL as string) || 'https://tocotoco-backend.gcimaster-glitch.workers.dev',
+  API_BASE_URL: (process.env.VITE_API_BASE_URL as string) || 'https://tocotoco-backend.gcimaster.workers.dev',
   
   // Integration Keys (Public keys only)
   STRIPE_PUBLIC_KEY: 'pk_test_placeholder',
