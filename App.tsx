@@ -1,5 +1,5 @@
 import React, { useState, useLayoutEffect } from 'react';
-import { ViewState, Job, PipelineItem } from './types';
+import { ViewState, Job, PipelineItem, InterviewReportRecord } from './types';
 import { Navigation } from './components/Navigation';
 import { Home } from './pages/Home';
 import { Dashboard } from './components/Dashboard';
@@ -26,6 +26,8 @@ import { PrivacyPolicy } from './components/PrivacyPolicy';
 import { OnboardingWizard } from './components/OnboardingWizard';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { Community } from './pages/Community';
+import { InterviewReportView } from './components/InterviewReportView';
+import { InterviewReportList } from './components/InterviewReportList';
 
 // --- MOCK DATA FOR JOB SEEKER ---
 const INITIAL_APPLICATIONS = [
@@ -96,6 +98,11 @@ const AppContent: React.FC = () => {
   const [selectedDiagnostic, setSelectedDiagnostic] = useState<'personality' | 'aptitude'>('personality');
   const [diagnosticResults, setDiagnosticResults] = useState<{personality?: any, aptitude?: any}>({});
 
+  // AI面接レポート関連state
+  const [currentReport, setCurrentReport] = useState<InterviewReportRecord | null>(null);
+  const [reportHistory, setReportHistory] = useState<InterviewReportRecord[]>([]);
+  const [selectedHistoryReport, setSelectedHistoryReport] = useState<InterviewReportRecord | null>(null);
+
   // Onboarding State
   const [showOnboarding, setShowOnboarding] = useState(false);
 
@@ -104,45 +111,56 @@ const AppContent: React.FC = () => {
     window.scrollTo(0, 0);
   }, [currentView]);
 
-  const handleInterviewComplete = (report: string) => {
-    const scoreMatch = report.match(/評価スコア.*?[：:]\s*(\d{1,3})/);
-    const extractedScore = scoreMatch ? parseInt(scoreMatch[1], 10) : 80;
+  const handleInterviewComplete = (result: import('./services/geminiService').StructuredReportResult) => {
+    const newRecord: InterviewReportRecord = {
+      id: `report_${Date.now()}`,
+      jobTitle: selectedJobForInterview?.title || '一般事務・軽作業（障がい者枠）',
+      company: selectedJobForInterview?.company || '不明な企業',
+      reportMarkdown: result.report,
+      score: result.score,
+      strengthsTags: result.strengthsTags,
+      weaknessesTags: result.weaknessesTags,
+      improvementSummary: result.improvementSummary,
+      createdAt: new Date().toISOString(),
+    };
 
+    // レポート履歴に追加
+    setReportHistory(prev => [newRecord, ...prev]);
+    setCurrentReport(newRecord);
+
+    // パイプラインに追加（企業向けデータ）
     const newApplicant: PipelineItem = {
       id: `new_${Date.now()}`,
-      candidateName: '山田 太郎 (あなた)', 
+      candidateName: '山田 太郎 (あなた)',
       candidateId: `U${Math.floor(Math.random() * 1000)}`,
-      targetCompany: selectedJobForInterview?.company || '不明な企業',
-      jobTitle: selectedJobForInterview?.title || '応募職種',
+      targetCompany: newRecord.company,
+      jobTitle: newRecord.jobTitle,
       status: 'matching',
       lastUpdated: 'たった今',
       agentMemo: 'AI一次面接完了。レポートを確認してください。',
       hasAiInterview: true,
-      aiInterviewReport: report,
-      aiInterviewScore: extractedScore
+      aiInterviewReport: result.report,
+      aiInterviewScore: result.score,
     };
     setPipeline(prev => [newApplicant, ...prev]);
 
     const newApplication = {
       id: Date.now(),
-      company: selectedJobForInterview?.company || '不明な企業',
-      title: selectedJobForInterview?.title || '応募職種',
+      company: newRecord.company,
+      title: newRecord.jobTitle,
       status: '書類選考',
       progress: 20,
       nextAction: 'AI選考結果待ち',
       date: new Date().toLocaleDateString('ja-JP'),
-      messages: 0
+      messages: 0,
     };
     setUserApplications(prev => [newApplication, ...prev]);
 
-    alert('AI面接が完了しました！\nマイページで応募履歴とレポートを確認できます。');
-    
     setSelectedJobForInterview(null);
-    
-    if (userRole !== 'job_seeker') {
-       setUserRole('job_seeker'); 
-    }
-    setView(ViewState.DASHBOARD);
+    if (userRole !== 'job_seeker') setUserRole('job_seeker');
+
+    // レポート表示画面へ直接遷移（フェーズ1改善のコア）
+    setView(ViewState.INTERVIEW_REPORT);
   };
 
   const handleStartDiagnostic = (type: 'personality' | 'aptitude') => {
@@ -236,6 +254,37 @@ const AppContent: React.FC = () => {
         return <PrivacyPolicy setView={setView} />;
       case ViewState.COMMUNITY:
         return <Community setView={setView} />;
+      case ViewState.INTERVIEW_REPORT:
+        return currentReport ? (
+          <InterviewReportView
+            report={currentReport}
+            setView={setView}
+            onRetry={() => {
+              setCurrentReport(null);
+              setView(ViewState.INTERVIEW_PRACTICE);
+            }}
+          />
+        ) : (
+          <InterviewReportList
+            reports={reportHistory}
+            setView={setView}
+            onSelectReport={(r) => {
+              setCurrentReport(r);
+              setView(ViewState.INTERVIEW_REPORT);
+            }}
+          />
+        );
+      case ViewState.INTERVIEW_REPORT_LIST:
+        return (
+          <InterviewReportList
+            reports={reportHistory}
+            setView={setView}
+            onSelectReport={(r) => {
+              setCurrentReport(r);
+              setView(ViewState.INTERVIEW_REPORT);
+            }}
+          />
+        );
       default:
         return <Home setView={setView} />;
     }

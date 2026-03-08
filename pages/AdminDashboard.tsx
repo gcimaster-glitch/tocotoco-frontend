@@ -37,7 +37,11 @@ interface AdminJob {
 
 type AdminSection = 'overview' | 'users' | 'jobs';
 
-export const AdminDashboard: React.FC = () => {
+interface AdminDashboardPageProps {
+  setView?: (view: import('../types').ViewState) => void;
+}
+
+export const AdminDashboard: React.FC<AdminDashboardPageProps> = () => {
   const { token } = useAuth();
   const [activeSection, setActiveSection] = useState<AdminSection>('overview');
   const [stats, setStats] = useState<Stats | null>(null);

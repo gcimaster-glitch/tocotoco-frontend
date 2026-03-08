@@ -132,6 +132,21 @@ export enum ViewState {
   TERMS = 'TERMS', 
   PRIVACY = 'PRIVACY',
   COMMUNITY = 'COMMUNITY',
+  INTERVIEW_REPORT = 'INTERVIEW_REPORT',
+  INTERVIEW_REPORT_LIST = 'INTERVIEW_REPORT_LIST',
+}
+
+// AI面接レポートの記録
+export interface InterviewReportRecord {
+  id: string;
+  jobTitle: string;
+  company: string;
+  reportMarkdown: string;
+  score: number;
+  strengthsTags: string[];
+  weaknessesTags: string[];
+  improvementSummary: string;
+  createdAt: string;
 }
 
 export interface ChatMessage {

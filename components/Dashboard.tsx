@@ -556,6 +556,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ userRole, setView, pipelin
               </button>
            </div>
 
+           {/* AI面接レポートリンク */}
+           <div className="bg-gradient-to-r from-emerald-50 to-teal-50 p-6 rounded-2xl border border-emerald-100 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden mb-8 shadow-sm">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-emerald-200/20 rounded-full blur-3xl -mr-10 -mt-10"></div>
+              <div className="relative z-10 flex-1">
+                 <div className="flex items-center gap-2 mb-2">
+                    <Video size={24} className="text-emerald-600" />
+                    <h3 className="font-bold text-lg text-emerald-900">AI面接レポート</h3>
+                 </div>
+                 <p className="text-sm text-emerald-700 max-w-2xl leading-relaxed">
+                    面接練習の履歴とAI分析レポートを確認できます。スコア推移や強み・改善点を追って、面接力を確実に伸ばしましょう。
+                 </p>
+              </div>
+              <button
+                onClick={() => setView && setView(ViewState.INTERVIEW_REPORT_LIST)}
+                className="relative z-10 bg-emerald-600 text-white px-8 py-4 rounded-xl font-bold flex items-center gap-2 hover:bg-emerald-500 shadow-md transition-all hover:scale-105 whitespace-nowrap"
+              >
+                 <BarChart3 size={20} /> レポート一覧を見る
+              </button>
+           </div>
+
            {/* Application Status */}
            <h2 className="text-xl font-bold text-stone-800 mb-6 flex items-center gap-2"><Briefcase size={22}/> 選考状況</h2>
            {seekerApplications && seekerApplications.length > 0 ? (

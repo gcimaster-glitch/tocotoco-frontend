@@ -7,7 +7,7 @@ import {
 import ReactMarkdown from 'react-markdown';
 import { Job, ViewState } from '../types';
 import { PageHeader } from './PageHeader';
-import { generateInterviewReport as generateInterviewReportApi } from '../services/geminiService';
+import { generateInterviewReport as generateInterviewReportApi, StructuredReportResult } from '../services/geminiService';
 
 // ============================================================
 // 型定義
@@ -15,7 +15,7 @@ import { generateInterviewReport as generateInterviewReportApi } from '../servic
 
 interface InterviewPracticeProps {
   job: Job | null;
-  onComplete?: (report: string) => void;
+  onComplete?: (result: StructuredReportResult) => void;
   setView?: (view: ViewState) => void;
 }
 
@@ -278,9 +278,9 @@ export const InterviewPractice: React.FC<InterviewPracticeProps> = ({
   const handleSubmit = useCallback(async () => {
     setStep('generating');
     const jobTitle = job?.title || '一般事務・軽作業（障がい者枠）';
-    const report = await generateInterviewReportApi(jobTitle, messages);
+    const structured = await generateInterviewReportApi(jobTitle, messages);
     if (onComplete) {
-      onComplete(report);
+      onComplete(structured);
     }
     setStep('complete');
   }, [job, messages, onComplete]);

@@ -3,6 +3,7 @@ import { MessageSquare, Heart, Plus, ChevronRight, Tag, User, Clock, ArrowLeft, 
 import { API_BASE_URL } from '../config';
 import { useAuth } from '../contexts/AuthContext';
 import { PageHeader } from '../components/PageHeader';
+import { ViewState } from '../types';
 
 interface Post {
   id: string;
@@ -45,7 +46,7 @@ const formatDate = (dateStr: string) => {
 };
 
 interface CommunityProps {
-  setView?: (view: string) => void;
+  setView?: (view: ViewState) => void;
 }
 
 export const Community: React.FC<CommunityProps> = () => {

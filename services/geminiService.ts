@@ -82,17 +82,38 @@ export const generateScoutMessage = async (
   }
 };
 
-// --- AI面接レポート生成 ---
+// 構造化レポートデータの型
+export interface StructuredReportResult {
+  report: string;
+  score: number;
+  strengthsTags: string[];
+  weaknessesTags: string[];
+  improvementSummary: string;
+}
+
+// --- AI面接レポート生成（構造化データ対応版）---
 export const generateInterviewReport = async (
   jobTitle: string,
   transcripts: { speaker: string; text: string }[]
-): Promise<string> => {
+): Promise<StructuredReportResult> => {
   try {
     const result = await callBackendApi('interview-report', { jobTitle, transcripts });
-    return result.report || '# レポート生成失敗\n\nもう一度お試しください。';
+    return {
+      report: result.report || '# レポート生成失敗\n\nもう一度お試しください。',
+      score: typeof result.score === 'number' ? result.score : 70,
+      strengthsTags: Array.isArray(result.strengthsTags) ? result.strengthsTags : [],
+      weaknessesTags: Array.isArray(result.weaknessesTags) ? result.weaknessesTags : [],
+      improvementSummary: result.improvementSummary || '',
+    };
   } catch (error) {
     console.error('Interview Report Error:', error);
-    return `# エラー\n\nレポートの生成に失敗しました。\n\n**評価スコア**: 0/100`;
+    return {
+      report: `# エラー\n\nレポートの生成に失敗しました。`,
+      score: 0,
+      strengthsTags: [],
+      weaknessesTags: [],
+      improvementSummary: '',
+    };
   }
 };
 
